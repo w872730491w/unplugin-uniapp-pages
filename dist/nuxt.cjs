@@ -1,10 +1,10 @@
 "use strict";Object.defineProperty(exports, "__esModule", {value: true});
 
-var _chunkECRVFBI7cjs = require('./chunk-ECRVFBI7.cjs');
+var _chunkVRLJRV63cjs = require('./chunk-VRLJRV63.cjs');
 
 
-var _chunkKWFGUAPWcjs = require('./chunk-KWFGUAPW.cjs');
-require('./chunk-B6QLAEHF.cjs');
+var _chunkAQB2T5AMcjs = require('./chunk-AQB2T5AM.cjs');
+require('./chunk-DBU5D22D.cjs');
 
 // src/nuxt.ts
 var _kit = require('@nuxt/kit');
@@ -18,8 +18,8 @@ var nuxt_default = _kit.defineNuxtModule.call(void 0, {
     // ...default options
   },
   setup(options, _nuxt) {
-    _kit.addVitePlugin.call(void 0, () => _chunkECRVFBI7cjs.vite_default.call(void 0, options));
-    _kit.addWebpackPlugin.call(void 0, () => _chunkKWFGUAPWcjs.webpack_default.call(void 0, options));
+    _kit.addVitePlugin.call(void 0, () => _chunkVRLJRV63cjs.vite_default.call(void 0, options));
+    _kit.addWebpackPlugin.call(void 0, () => _chunkAQB2T5AMcjs.webpack_default.call(void 0, options));
   }
 });
 
