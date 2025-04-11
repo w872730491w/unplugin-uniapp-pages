@@ -32,6 +32,7 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (
     const outputJsonPath = resolve(process.cwd(), outputJson);
 
     const pageFiles = await getVueFiles(pagesAbsoluteDir);
+    let homePage: string | null = null;
 
     const pages: PageConfig[] = [];
     for (const file of pageFiles) {
@@ -42,6 +43,16 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (
 
       const vueContent = await fs.readFile(file, "utf-8");
       const { routeBlockConfig } = extractRouteConfigs(vueContent);
+      if (routeBlockConfig?.unplugin?.isHome) {
+        if (!homePage) {
+          homePage = defaultPath;
+          delete routeBlockConfig.unplugin;
+        } else {
+          console.error(
+            `Duplicate home page found: ${defaultPath} and ${homePage}`
+          );
+        }
+      }
 
       const pageConfig: PageConfig = merge(
         { path: defaultPath },
@@ -50,8 +61,18 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (
 
       pages.push(pageConfig);
     }
+    // homePage 放在第一位
+    if (homePage) {
+      pages.sort((a, b) => {
+        if (a.path === homePage) {
+          return -1;
+        }
+        return 0;
+      });
+    } else {
+      console.error("No home page found");
+    }
     let defaultPagesConfigContent: any = {};
-    console.log(existsSync(resolve(process.cwd(), defaultPagesConfig)));
 
     if (existsSync(resolve(process.cwd(), defaultPagesConfig))) {
       try {
@@ -69,7 +90,6 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (
     });
     const pagesJson = JSON.stringify(mergedPagesJson, null, 2);
     await fs.writeFile(outputJsonPath, pagesJson, "utf-8");
-    console.log("pages.json has been updated.");
 
     // Generate TypeScript declaration file if `dts` is enabled
     if (enableDts) {

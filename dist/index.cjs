@@ -2,9 +2,9 @@
 
 
 
-var _chunkDBU5D22Dcjs = require('./chunk-DBU5D22D.cjs');
+var _chunkP55SKGMUcjs = require('./chunk-P55SKGMU.cjs');
 
 
 
 
-exports.default = _chunkDBU5D22Dcjs.index_default; exports.unplugin = _chunkDBU5D22Dcjs.unplugin; exports.unpluginFactory = _chunkDBU5D22Dcjs.unpluginFactory;
+exports.default = _chunkP55SKGMUcjs.index_default; exports.unplugin = _chunkP55SKGMUcjs.unplugin; exports.unpluginFactory = _chunkP55SKGMUcjs.unpluginFactory;

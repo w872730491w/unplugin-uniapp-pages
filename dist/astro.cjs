@@ -1,6 +1,6 @@
 "use strict";Object.defineProperty(exports, "__esModule", {value: true});
 
-var _chunkDBU5D22Dcjs = require('./chunk-DBU5D22D.cjs');
+var _chunkP55SKGMUcjs = require('./chunk-P55SKGMU.cjs');
 
 // src/astro.ts
 var astro_default = (options) => ({
@@ -9,7 +9,7 @@ var astro_default = (options) => ({
     "astro:config:setup": async (astro) => {
       var _a;
       (_a = astro.config.vite).plugins || (_a.plugins = []);
-      astro.config.vite.plugins.push(_chunkDBU5D22Dcjs.index_default.vite(options));
+      astro.config.vite.plugins.push(_chunkP55SKGMUcjs.index_default.vite(options));
     }
   }
 });

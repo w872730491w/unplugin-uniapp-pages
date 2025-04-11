@@ -11,9 +11,11 @@ var unpluginFactory = (options) => {
   const enableDts = (options == null ? void 0 : options.dts) || false;
   const defaultPagesConfig = (options == null ? void 0 : options.defaultPagesConfig) || "src/defaultPages.json";
   async function generatePagesJson() {
+    var _a;
     const pagesAbsoluteDir = _path.resolve.call(void 0, process.cwd(), pagesDir);
     const outputJsonPath = _path.resolve.call(void 0, process.cwd(), outputJson);
     const pageFiles = await getVueFiles(pagesAbsoluteDir);
+    let homePage = null;
     const pages = [];
     for (const file of pageFiles) {
       const relativePath = _path.relative.call(void 0, pagesAbsoluteDir, file);
@@ -22,14 +24,33 @@ var unpluginFactory = (options) => {
       );
       const vueContent = await _fs.promises.readFile(file, "utf-8");
       const { routeBlockConfig } = extractRouteConfigs(vueContent);
+      if ((_a = routeBlockConfig == null ? void 0 : routeBlockConfig.unplugin) == null ? void 0 : _a.isHome) {
+        if (!homePage) {
+          homePage = defaultPath;
+          delete routeBlockConfig.unplugin;
+        } else {
+          console.error(
+            `Duplicate home page found: ${defaultPath} and ${homePage}`
+          );
+        }
+      }
       const pageConfig = _merge2.default.call(void 0, 
         { path: defaultPath },
         routeBlockConfig || {}
       );
       pages.push(pageConfig);
     }
+    if (homePage) {
+      pages.sort((a, b) => {
+        if (a.path === homePage) {
+          return -1;
+        }
+        return 0;
+      });
+    } else {
+      console.error("No home page found");
+    }
     let defaultPagesConfigContent = {};
-    console.log(_fs.existsSync.call(void 0, _path.resolve.call(void 0, process.cwd(), defaultPagesConfig)));
     if (_fs.existsSync.call(void 0, _path.resolve.call(void 0, process.cwd(), defaultPagesConfig))) {
       try {
         defaultPagesConfigContent = await _fs.promises.readFile(defaultPagesConfig, {
@@ -45,7 +66,6 @@ var unpluginFactory = (options) => {
     });
     const pagesJson = JSON.stringify(mergedPagesJson, null, 2);
     await _fs.promises.writeFile(outputJsonPath, pagesJson, "utf-8");
-    console.log("pages.json has been updated.");
     if (enableDts) {
       const dtsPath = typeof enableDts === "string" ? _path.resolve.call(void 0, process.cwd(), enableDts) : _path.resolve.call(void 0, process.cwd(), "typed-router.d.ts");
       await generateDtsFile(pages, dtsPath);

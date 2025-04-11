@@ -1,10 +1,10 @@
 "use strict";Object.defineProperty(exports, "__esModule", {value: true});
 
-var _chunkDBU5D22Dcjs = require('./chunk-DBU5D22D.cjs');
+var _chunkP55SKGMUcjs = require('./chunk-P55SKGMU.cjs');
 
 // src/rollup.ts
 var _unplugin = require('unplugin');
-var rollup_default = _unplugin.createRollupPlugin.call(void 0, _chunkDBU5D22Dcjs.unpluginFactory);
+var rollup_default = _unplugin.createRollupPlugin.call(void 0, _chunkP55SKGMUcjs.unpluginFactory);
 
 
 exports.default = rollup_default;
