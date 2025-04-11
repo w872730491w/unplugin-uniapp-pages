@@ -5,5 +5,11 @@ import Unplugin from "../src/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [Inspect(), Unplugin(), uni()],
+  plugins: [
+    Inspect(),
+    Unplugin({
+      dts: "./src/types/routes.d.ts",
+    }),
+    uni(),
+  ],
 });

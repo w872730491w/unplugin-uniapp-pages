@@ -1,10 +1,11 @@
 import type { UnpluginFactory } from "unplugin";
 import type { Options } from "./types";
 import { createUnplugin } from "unplugin";
-import { resolve, relative } from "path";
-import { promises as fs } from "fs";
+import { resolve, relative, dirname } from "path";
+import { promises as fs, existsSync } from "fs";
 import { parse } from "@vue/compiler-sfc";
-import { merge } from "lodash-es";
+import merge from "lodash/merge";
+import { normalizePath } from "vite";
 
 // 定义页面配置的类型
 interface PageConfig {
@@ -17,15 +18,14 @@ type PagesJson = {
   [key: string]: any; // 允许其他全局字段（如 globalStyle 等）
 };
 
-const virtualDefinePageId = "virtual:define-page";
-const resolvedVirtualDefinePageId = "\0" + virtualDefinePageId;
-
 export const unpluginFactory: UnpluginFactory<Options | undefined> = (
   options
 ) => {
   const pagesDir = options?.pagesDir || "src/pages";
-  const outputJson = options?.outputJson || "pages.json";
+  const outputJson = options?.outputJson || "src/pages.json";
   const enableDts = options?.dts || false; // Whether to generate a dts file
+  const defaultPagesConfig =
+    options?.defaultPagesConfig || "src/defaultPages.json";
 
   async function generatePagesJson() {
     const pagesAbsoluteDir = resolve(process.cwd(), pagesDir);
@@ -36,30 +36,37 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (
     const pages: PageConfig[] = [];
     for (const file of pageFiles) {
       const relativePath = relative(pagesAbsoluteDir, file);
-      const defaultPath = `/${relativePath.replace(/\.vue$/, "")}`;
+      const defaultPath = normalizePath(
+        `pages/${relativePath.replace(/\.vue$/, "")}`
+      );
 
       const vueContent = await fs.readFile(file, "utf-8");
-      const { definePageConfig, routeBlockConfig } =
-        extractRouteConfigs(vueContent);
+      const { routeBlockConfig } = extractRouteConfigs(vueContent);
 
       const pageConfig: PageConfig = merge(
         { path: defaultPath },
-        routeBlockConfig || {},
-        definePageConfig || {}
+        routeBlockConfig || {}
       );
 
       pages.push(pageConfig);
     }
+    let defaultPagesConfigContent: any = {};
+    console.log(existsSync(resolve(process.cwd(), defaultPagesConfig)));
 
-    let existingPagesJson: PagesJson = { pages: [] };
-    try {
-      const existingContent = await fs.readFile(outputJsonPath, "utf-8");
-      existingPagesJson = JSON.parse(existingContent);
-    } catch {
-      console.log("No existing pages.json found, creating a new one.");
+    if (existsSync(resolve(process.cwd(), defaultPagesConfig))) {
+      try {
+        defaultPagesConfigContent = await fs.readFile(defaultPagesConfig, {
+          encoding: "utf-8",
+        });
+        defaultPagesConfigContent = JSON.parse(defaultPagesConfigContent);
+      } catch (err) {
+        console.error(`Failed to read default pages config file: ${err}`);
+      }
     }
 
-    const mergedPagesJson: PagesJson = merge(existingPagesJson, { pages });
+    const mergedPagesJson: PagesJson = merge(defaultPagesConfigContent, {
+      pages,
+    });
     const pagesJson = JSON.stringify(mergedPagesJson, null, 2);
     await fs.writeFile(outputJsonPath, pagesJson, "utf-8");
     console.log("pages.json has been updated.");
@@ -75,6 +82,14 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (
   }
 
   async function generateDtsFile(pages: PageConfig[], filePath: string) {
+    // 确保目录存在
+    const dir = dirname(filePath);
+    try {
+      await fs.mkdir(dir, { recursive: true });
+    } catch (err) {
+      console.error(`Failed to create directory: ${dir}`, err);
+    }
+
     const routes = pages.map((page) => {
       const path = page.path || "/";
       const alias = page.alias
@@ -85,10 +100,6 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (
 
     const dtsContent = `declare module "typed-router" {
   export type RoutePaths = ${routes.join(" | ")};
-  export function useTypedRouter(): {
-    push(path: RoutePaths): void;
-    replace(path: RoutePaths): void;
-  };
 }`;
     await fs.writeFile(filePath, dtsContent, "utf-8");
     console.log(`TypeScript declaration file has been written to ${filePath}`);
@@ -112,22 +123,7 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (
   function extractRouteConfigs(vueContent: string) {
     const { descriptor } = parse(vueContent);
 
-    let definePageConfig: PageConfig | null = null;
     let routeBlockConfig: PageConfig | null = null;
-
-    if (descriptor.scriptSetup) {
-      const setupContent = descriptor.scriptSetup.content;
-      const match = setupContent.match(/definePage\(([\s\S]*?)\)/);
-        if (match) {
-          console.log(match);
-          
-        // try {
-        //   definePageConfig = eval(`(${match[1]})`);
-        // } catch (e) {
-        //   console.error("Failed to parse definePage config:", e);
-        // }
-      }
-    }
 
     if (descriptor.customBlocks) {
       const routeBlock = descriptor.customBlocks.find(
@@ -142,25 +138,11 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (
       }
     }
 
-    return { definePageConfig, routeBlockConfig };
+    return { routeBlockConfig };
   }
 
   return {
     name: "unplugin-starter",
-    resolveId(id) {
-      if (id === virtualDefinePageId) {
-        return resolvedVirtualDefinePageId;
-      }
-    },
-    load(id) {
-      if (id === resolvedVirtualDefinePageId) {
-        return `
-          export function definePage(config: {
-           [key: string]: any
-          }): void;
-        `;
-      }
-    },
     async buildStart() {
       await generatePagesJson();
     },

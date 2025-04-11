@@ -7,9 +7,17 @@
   </view>
 </template>
 
+<route lang="json">
+{
+  "style": {
+    "navigationBarTitleText": "uni-app"
+  }
+}
+</route>
+
 <script setup lang="ts">
-import { ref } from 'vue'
-const title = ref('Hello')
+import { ref } from "vue";
+const title = ref("Hello");
 </script>
 
 <style>
